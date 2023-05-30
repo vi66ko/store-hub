@@ -1,0 +1,22 @@
+/*place global styles here */
+html,
+body {
+	@apply h-full;
+}
+
+@font-face {
+	font-family: 'Abril Fatface';
+	src: url('/fonts/AbrilFatface.ttf');
+	font-display: swap;
+}
+
+#sidebar-left {
+	border-right-width: 0.1rem;
+	border-style: dashed;
+	border-image: linear-gradient(to bottom, #0ea5e9, #4f46e5) 1.5;
+}
+
+#sidebar-left > .app-rail {
+	margin-right: 0.035rem;
+	box-shadow: 8px 0 10px -5px rgba(0, 0, 0, 0.5);
+}
