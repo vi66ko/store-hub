@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # store-hub
 A system for managin stores
 =======
@@ -41,3 +42,8 @@ You can preview the production build with `npm run preview`.
 
 > To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
 >>>>>>> 1183672 (A little after the begining)
+=======
+# store-hub
+
+A system for managin stores.
+>>>>>>> 4c0cf40 (.)
