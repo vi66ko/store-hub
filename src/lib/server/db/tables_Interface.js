@@ -3,7 +3,7 @@
 /**
  * Fields for the 'user' table
  * 
- * @typedef {object} User
+ * @typedef {Object} User
  * @property {string} [email_primary_key]
  * @property {string} [username]
  * @property {string} [password]
@@ -13,7 +13,7 @@
 /**
  * Fields for the 'products' table.
  * 
- * @typedef {object} Products
+ * @typedef {Object} Products
  * @property {string} [id_primary_key]
  * @property {string} [barcode]
  * @property {string} [name]
@@ -25,7 +25,7 @@
 /**
  * Fields for the 'sells' table.
  * 
- * @typedef {object} Sells
+ * @typedef {Object} Sells
  * @property {string} [product_foreign_key] 
  * @property {string} [seller_foreign_key] 
  * @property {string} [price] - The price of the moment of sell
