@@ -36,9 +36,7 @@
 
 
 let User = /**@type {User} */ ({})
-
-/**@type {Sells} */
-let Sells;
+let Sells = /**@type {Sells} */ ({});
 
 /**@type {Tables} */
 let Table;
