@@ -3,27 +3,30 @@
 
 	import { TabGroup, Tab, focusTrap } from '@skeletonlabs/skeleton';
 	export let data: PageData;
-
+	export let form;
 	// states
 	let tabSet: number = 0;
 	let isFocused: boolean = true;
+	$: {
+		console.log(form);
+	}
 </script>
 
 <div class="h-screen grid place-items-center">
 	<div class="w-64 bg-surface-700/50">
 		<TabGroup>
-			<Tab bind:group={tabSet} name="singIn" value={0}>Sign in:</Tab>
+			<Tab bind:group={tabSet} name="singIn" value={0}>Sign in</Tab>
 			<Tab bind:group={tabSet} name="signUp" value={1}>Sign up</Tab>
 		</TabGroup>
 		{#if tabSet === 0}
 			<form
 				method="POST"
-				action="?login"
+				action="?/signIn"
 				use:focusTrap={isFocused && tabSet === 0}
-				class="h-72 flex flex-col justify-between"
+				class="h-80 flex flex-col justify-between"
 			>
 				<div class="mt-6">
-					<input type="text" name="username" id="username" placeholder="Username" class="input" />
+					<input type="email" name="email" placeholder="Email" class="input" />
 					<input
 						type="password"
 						name="password"
@@ -34,19 +37,20 @@
 				</div>
 
 				<button class="btn bg-gradient-to-br variant-gradient-secondary-primary rounded-none"
-					>Login</button
+					>Sign in</button
 				>
 			</form>
 		{/if}
 		{#if tabSet === 1}
 			<form
 				method="POST"
-				action="?signup"
+				action="?/signUp"
 				use:focusTrap={isFocused && tabSet === 1}
-				class="h-72 flex flex-col justify-between"
+				class="h-80 flex flex-col justify-between"
 			>
 				<div class="mt-6">
 					<input type="text" name="username" placeholder="Username" class="input mt-4" />
+					<input type="email" name="email" placeholder="Email" class="input mt-4" />
 					<input type="password" name="password" placeholder="Password" class="input" />
 					<input
 						type="password"
@@ -57,7 +61,7 @@
 				</div>
 
 				<button class="btn bg-gradient-to-br variant-gradient-secondary-primary rounded-none"
-					>Sign Up</button
+					>Sign up</button
 				>
 			</form>
 		{/if}
