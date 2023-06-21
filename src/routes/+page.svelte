@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import type { PageData } from './$types';
 
 	import { TabGroup, Tab, focusTrap } from '@skeletonlabs/skeleton';
@@ -22,6 +23,7 @@
 			<form
 				method="POST"
 				action="?/signIn"
+				use:enhance
 				use:focusTrap={isFocused && tabSet === 0}
 				class="h-80 flex flex-col justify-between"
 			>
@@ -45,15 +47,16 @@
 			<form
 				method="POST"
 				action="?/signUp"
+				use:enhance
 				use:focusTrap={isFocused && tabSet === 1}
 				class="h-80 flex flex-col justify-between"
 			>
 				<div class="mt-6">
 					<input type="text" name="username" placeholder="Username" class="input mt-4" />
 					<input type="email" name="email" placeholder="Email" class="input mt-4" />
-					<input type="password" name="password" placeholder="Password" class="input" />
+					<input type="text" name="password" placeholder="Password" class="input" />
 					<input
-						type="password"
+						type="text"
 						name="passwordConfirmation"
 						placeholder="Confirm password"
 						class="input"

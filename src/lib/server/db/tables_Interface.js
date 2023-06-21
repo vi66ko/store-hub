@@ -1,49 +1,59 @@
-/** @typedef { "users" | "sels" | "log"} Tables */
+// SQLight have dynamic data types.
+// So I have to make sure the format for entered field is correct.
+
+
+// There could be another table for  "user_logs" 
+//  - when user has been loged in
+//  - wehn hase been logout
+//  - for how long he have been loged in
+//  - how much he  maide from sells | ? for what period to be? between login & logout, days ....
+/** @typedef { "Users" | "Products" | "Sells"} Tables_interface */
 
 /**
  * Fields for the 'user' table
  * 
- * @typedef {Object} User
- * @property {string} [email_primary_key]
- * @property {string} [username]
+ * @typedef {Object} User_interface
+ * @property {string} [email]
+ * @property {string} [name]
  * @property {string} [password]
+ * @property {string} [role]
  * @property {string} [settings] Could be JSON but for now is optional
  */
 
 /**
  * Fields for the 'products' table.
  * 
- * @typedef {Object} Products
- * @property {string} [id_primary_key]
+ * @typedef {Object} Product_interface
+ * @property {number} [id_primary_key]
  * @property {string} [barcode]
  * @property {string} [name]
+ * @property {string} [description]
  * @property {number} [price]
  * @property {string} [category]
- * @property {number} [quantity]
  */
 
 /**
  * Fields for the 'sells' table.
  * 
- * @typedef {Object} Sells
- * @property {string} [product_foreign_key] 
- * @property {string} [seller_foreign_key] 
- * @property {string} [price] - The price of the moment of sell
- * @property {Date} [date]
+ * @typedef {Object} Sell_interface
+ * @property {number} [sell_id] - Priamry Key
+ * @property {number} [product_id] - Foreign key 
+ * @property {number} [seller_id] - Foreign Key (user)
+ * @property {number} [sell_price] - The price of the moment of sell
+ * @property {number} [sell_date] - It will be in UNIX time number of seconds since 1970-01-01
  */
 
 
 
 
-let User = /**@type {User} */ ({})
-let Sells = /**@type {Sells} */ ({});
+let Users = /**@type {User_interface} */ ({})
 
-/**@type {Tables} */
-let Table;
+let Sells = /**@type {Sell_interface} */ ({});
+
+/**@type {Tables_interface} */
+let Tables;
 
 
-
-export { Table, User, Sells };
 
 
 // Another options is to use enumerator
@@ -54,3 +64,4 @@ export { Table, User, Sells };
 //     TABLE_THREE: "log",
 //     TABLE_FOUR: "opaa",
 // };
+export { Tables, Users, Sells };
