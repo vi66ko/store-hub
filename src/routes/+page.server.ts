@@ -1,8 +1,10 @@
 import type { PageServerLoad, Actions } from './$types';
 
 import { db } from '$lib/server/db/connectdb';
+
 import authDb from '$lib/server/db/auth';
-import { redirect, fail } from '@sveltejs/kit';
+
+import { redirect, fail, error } from '@sveltejs/kit';
 import { empty } from 'svelte/internal';
 
 export const load = (async ({ coockie, url }) => {
@@ -20,7 +22,7 @@ export const actions = {
 
 		// getUsername(name);
 	},
-	signUp: async ({ request }) => {
+	signUp: async ({ request, cookies }) => {
 		const data = await request.formData();
 		const username = data.get('username') || '';
 		const email = data.get('email') || '';
@@ -29,11 +31,10 @@ export const actions = {
 
 		// Generally validation it will be in frontend
 		// Here is for men with poor manners.
-		// Do i really need this imitation of SQL injection protection?
 		const usernameRegex = /^[a-zA-Z0-9.\-_]+$/;
-		// if (username === '' || !usernameRegex.test(username)) {
-		// 	return fail(400, { message: 'Nice try' });
-		// }
+		if (username === '' || !usernameRegex.test(username)) {
+			return fail(400, { message: 'Nice try' });
+		}
 
 		// const emailRegex = /^[^|".][a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9]+(?:\.[a-zA-Z]+)+$/;
 		// if (email === '' || !emailRegex.test(email)) {
@@ -58,13 +59,24 @@ export const actions = {
 			role: 'admin'
 		};
 
-		authDb.singUp(user);
-		// wirte to db
-		try {
-			// const addingNewUser = await db.insert('Users', user);
-		} catch (error) {
-			return error;
+		const doesUserExist = await authDb.isUserExist(email).catch((error) => error);
+
+		if (doesUserExist) {
+			return { message: 'The username does exist already' };
 		}
+
+		const signUp = await authDb.singUp(username, email, password).catch((error) => error);
+
+		if (!signUp.ifSuccessful) {
+			return { message: 'Something went wrong' };
+		}
+
+		
+		// add the user
+
+		// generate session cookie from the user ID
+
+		// const addingNewUser = await db.insert('Users', user);
 
 		console.log('Siiiiign IiiiiiN');
 		console.log({ username });

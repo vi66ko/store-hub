@@ -6,7 +6,7 @@
 	export let data: PageData;
 	export let form;
 	// states
-	let tabSet: number = 0;
+	let tabSet: number = 1;
 	let isFocused: boolean = true;
 	$: {
 		console.log(form);
@@ -52,10 +52,17 @@
 				class="h-80 flex flex-col justify-between"
 			>
 				<div class="mt-6">
-					<input type="text" name="username" placeholder="Username" class="input mt-4" />
-					<input type="email" name="email" placeholder="Email" class="input mt-4" />
-					<input type="text" name="password" placeholder="Password" class="input" />
 					<input
+						value="test"
+						type="text"
+						name="username"
+						placeholder="Username"
+						class="input mt-4"
+					/>
+					<input value="tes@t" type="email" name="email" placeholder="Email" class="input mt-4" />
+					<input value="test" type="text" name="password" placeholder="Password" class="input" />
+					<input
+						value="test"
 						type="text"
 						name="passwordConfirmation"
 						placeholder="Confirm password"
