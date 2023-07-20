@@ -10,6 +10,6 @@
 	<ul>
 		<li><a href="/manage/products">Products</a></li>
 		<li><a href="/manage/categories">Gategories</a></li>
-		<li><a href="/brands">Brands</a></li>
+		<li><a href="/manage/brands">Brands</a></li>
 	</ul>
 </nav>
