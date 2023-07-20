@@ -1,6 +1,13 @@
 <script lang="ts">
 	//  Skeleton components
-	import { AppShell, AppBar, AppRail, AppRailTile, AppRailAnchor } from '@skeletonlabs/skeleton';
+	import {
+		AppShell,
+		AppBar,
+		AppRail,
+		AppRailTile,
+		AppRailAnchor,
+		Modal
+	} from '@skeletonlabs/skeleton';
 	import { Drawer, drawerStore } from '@skeletonlabs/skeleton';
 	// Website components
 	import ManageNavigation from '$lib/components/Navigations/Manage.svelte';
@@ -130,8 +137,12 @@
 			<ManageNavigation />
 		{/if}
 	</svelte:fragment>
-	<slot />
+
+	<main class="px-3 py-1">
+		<slot />
+	</main>
 </AppShell>
+<Modal />
 
 <style>
 	.sidebar-icons {
