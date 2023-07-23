@@ -31,14 +31,14 @@ export const actions = {
 		const newBrandName = formData.get('newName');
 
 		if (brandName === newBrandName) {
-			return fail(409, { errorMessage: 'Same name' });
+			return fail(409, { success: false, message: 'Same name' });
 		}
 
 		const updated = await db.brands.update(brandName, newBrandName).catch((error) => error);
 		if (!updated) {
 			console.log('Something went wrong when trying to update the brand name');
-			console.log({ result: updated });
-			return fail(500, { errorMessage: 'Something when wrong.' });
+			console.log({ updated });
+			return fail(500, { success: false, message: 'Something went wrong.' });
 		}
 
 		return {
@@ -55,7 +55,7 @@ export const actions = {
 		if (!deleting) {
 			console.log('Something went wrong when trying to delete the brand name');
 			console.log({ deleting });
-			return fail(500, { errorMessage: 'Something when wrong.' });
+			return fail(500, { success: false, message: 'Something went wrong.' });
 		}
 		return { success: true, message: `Successfully deleted ${spanWrap(name)}` };
 	}
