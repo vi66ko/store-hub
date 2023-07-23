@@ -6,7 +6,8 @@
 		AppRail,
 		AppRailTile,
 		AppRailAnchor,
-		Modal
+		Modal,
+		Toast
 	} from '@skeletonlabs/skeleton';
 	import { Drawer, drawerStore } from '@skeletonlabs/skeleton';
 	// Website components
@@ -143,6 +144,7 @@
 	</main>
 </AppShell>
 <Modal />
+<Toast />
 
 <style>
 	.sidebar-icons {
