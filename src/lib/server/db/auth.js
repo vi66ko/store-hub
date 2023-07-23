@@ -1,19 +1,17 @@
-import { error } from "@sveltejs/kit";
 import sqlite3 from "sqlite3";
+import { setUpSQLightErrorData, logError } from "$lib/gadgetBag";
 
 sqlite3.verbose()
 
-
+// If there is not table users it will throw an error
 // Table schema
 // CREATE TABLE IF NOT EXISTS Users(
-//     name TEXT NOT NULL CHECK (LENGTH(name) > 0),
 //     email TEXT PRIMARY KEY NOT NULL CHECK (LENGTH(email) > 0),
 //     password TEXT NOT NULL CHECK (LENGTH(password) > 0)
 // );
 
 
 function authDataBase() {
-
     function connect(filePath = './src/lib/server/db/auth.db') {
         const db = new sqlite3.Database(filePath, error => {
             if (error) console.error(error)
@@ -23,9 +21,37 @@ function authDataBase() {
     }
 
     return {
-        signIn(email, password) {
+        /**
+         * 
+         * @param {string} $email 
+         * @param {string} $password 
+         * @returns {Promise<{error: Error | null}>}
+         */
+        async signIn($email, $password) {
             // check if the user exist then add
-            // create a session
+            // const hasUers = await this.isUserExist(email)
+
+
+            return new Promise((resolve, reject) => {
+                const db = connect();
+                const query = `SELECT * FROM Users WHERE email = $email AND password = $password`
+
+                db.get(query, { $email, $password }, function (error, row) {
+                    if (error) {
+                        logError(error)
+                        return;
+                    }
+
+                    if (row) {
+                        resolve({ error: null, })
+                    } else {
+                        reject({
+                            error:
+                                { message: 'Invalid Credentials' }
+                        })
+                    }
+                })
+            })
 
         },
         /**
