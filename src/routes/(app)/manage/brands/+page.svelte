@@ -14,10 +14,10 @@
 	export let form: ActionData;
 
 	/**
-	 *
-	 * @param {Promise<string>}
+	 * @param value
+	 * @returns {Promise<string>} An empty string or “value” string.
 	 */
-	function editFun(value: string) {
+	function editFun(value: string): Promise<string> {
 		return new Promise((resolve) => {
 			const editModal: ModalSettings = {
 				type: 'prompt',
@@ -127,9 +127,9 @@
 										return;
 									}
 
-									const doesExist =
-										newName &&
-										data.brands.some((brand) => brand.name.toLowerCase() === newName.toLowerCase());
+									const doesExist = data.brands.some(
+										(brand) => brand.name.toLowerCase() === newName.toLowerCase()
+									);
 
 									if (doesExist) {
 										toast.warning(`${spanWrap(newName)} already exist.`);
