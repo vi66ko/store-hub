@@ -1,5 +1,6 @@
-import db from '$lib/server/db/connectdb';
 import { fail } from '@sveltejs/kit';
+import db from '$lib/server/db/connectdb';
+import { spanWrap } from '$lib/gadgetBag';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load = (async () => {
@@ -9,16 +10,53 @@ export const load = (async () => {
 }) satisfies PageServerLoad;
 
 export const actions = {
-	add: async ({ request }) => {
+	async add({ request }) {
 		const formData = await request.formData();
 		const brandName = formData.get('name');
 
-		const result = await db.brands.add(brandName).catch((error) => error);
+		const added = await db.brands.add(brandName).catch((error) => error);
 
-		if (!result.isSuccessful) {
-			return fail(409, { existMessage: result.message });
+		if (!added.isSuccessful) {
+			return fail(409, { success: false, message: `${spanWrap(brandName)} already exist.` });
 		}
 
-		return { success: true };
+		return {
+			success: true,
+			message: `Successfully add ${spanWrap(brandName)}`
+		};
+	},
+	async edit({ request }) {
+		const formData = await request.formData();
+		const brandName = formData.get('name');
+		const newBrandName = formData.get('newName');
+
+		if (brandName === newBrandName) {
+			return fail(409, { errorMessage: 'Same name' });
+		}
+
+		const updated = await db.brands.update(brandName, newBrandName).catch((error) => error);
+		if (!updated) {
+			console.log('Something went wrong when trying to update the brand name');
+			console.log({ result: updated });
+			return fail(500, { errorMessage: 'Something when wrong.' });
+		}
+
+		return {
+			success: true,
+			message: `Successfully changed from ${spanWrap(brandName)} to ${spanWrap(newBrandName)}`
+		};
+	},
+	async delete({ request }) {
+		const formData = await request.formData();
+		const name = formData.get('name');
+
+		const deleting = await db.brands.delete(name);
+
+		if (!deleting) {
+			console.log('Something went wrong when trying to delete the brand name');
+			console.log({ deleting });
+			return fail(500, { errorMessage: 'Something when wrong.' });
+		}
+		return { success: true, message: `Successfully deleted ${spanWrap(name)}` };
 	}
 } satisfies Actions;
