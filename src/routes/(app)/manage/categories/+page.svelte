@@ -13,24 +13,35 @@
 
 	export let data: PageData;
 	export let form: ActionData;
-	$: console.log(data);
 
 	/**
 	 *
 	 * @param value
 	 * @returns {Promise<string>} An empty string or “value” string.
 	 */
-	function editFun(value: string): Promise<string> {
+	function editFun(value: string): Promise<string | false> {
 		return new Promise((resolve) => {
-			const editModal: ModalSettings = {
+			const modal: ModalSettings = {
 				type: 'prompt',
 				title: 'Edit',
 				body: '',
 				value: value,
 				valueAttr: { type: 'text', required: true, class: 'input variant-from-material' },
-				response: (r) => (r ? resolve(r) : resolve(''))
+				response: (r) => resolve(r)
 			};
-			modalStore.trigger(editModal);
+			modalStore.trigger(modal);
+		});
+	}
+	function delFun(value: string): Promise<boolean> {
+		return new Promise((resolve) => {
+			const modal: ModalSettings = {
+				type: 'confirm',
+				title: 'Confirm deletion',
+				body: `You are about to DELETE ${spanWrap(value, 'ml-1 font-bold text-warning-500')}.<br/>
+				Are you sure?`,
+				response: (r) => resolve(r)
+			};
+			modalStore.trigger(modal);
 		});
 	}
 
@@ -52,7 +63,7 @@
 		<input
 			type="text"
 			placeholder="Category name"
-			name="name"
+			name="categoryName"
 			required
 			autofocus
 			class="w-96 input variant-form-material"
@@ -81,43 +92,48 @@
 			</tr>
 		</thead> -->
 			<tbody>
-				{#each data.categories as row, i}
+				{#each data.categories as category, i}
 					<tr>
 						<td class="w-[5.25rem] text-center">{i + 1}</td>
 						<td>
-							{row.name}
+							{category.name}
 						</td>
 						<td class="flex justify-end">
 							<form
 								method="POST"
 								action="?/edit"
 								use:enhance={async ({ formData, cancel }) => {
-									const newName = await editFun(row.name);
+									const newCategoryName = await editFun(category.name);
 
-									if (newName.length === 0) {
+									if (!newCategoryName) {
+										cancel();
+										return;
+									}
+
+									if (newCategoryName.length === 0) {
 										toast.warning('The field should not be empty.');
 										cancel();
 										return;
 									}
 
 									const doesExist = data.categories.some(
-										(category) => category.name.toLowerCase() === newName.toLowerCase()
+										(category) => category.name.toLowerCase() === newCategoryName.toLowerCase()
 									);
 
 									if (doesExist) {
-										toast.warning(`${spanWrap(newName)} already exist.`);
+										toast.warning(`${spanWrap(newCategoryName)} already exist.`);
 										cancel();
 										return;
 									}
 
-									formData.set('newName', newName);
+									formData.set('newCategoryName', newCategoryName);
 
 									return ({ update }) => {
 										update();
 									};
 								}}
 							>
-								<input type="hidden" name="name" value={row.name} />
+								<input type="hidden" name="categoryName" value={category.name} />
 								<button class="btn mr-4 variant-ringed-success">
 									<span class="w-4"><FaRegEdit /></span>
 									<span class="hidden md:inline font-light"> edit </span>
@@ -126,8 +142,16 @@
 							<form
 								method="POST"
 								action="?/delete"
-								use:enhance={async ({ submitter }) => {
+								use:enhance={async ({ submitter, formData, cancel }) => {
 									submitter.disabled = true;
+									const categoryName = formData.get('categoryName');
+									const confirmation = await delFun(categoryName);
+
+									if (!confirmation) {
+										cancel();
+										submitter.disabled = false;
+										return;
+									}
 
 									return ({ update }) => {
 										update();
@@ -135,7 +159,7 @@
 									};
 								}}
 							>
-								<input type="hidden" name="name" value={row.name} />
+								<input type="hidden" name="categoryName" value={category.name} />
 								<button class="btn variant-ringed-error">
 									<div class="w-4"><MdDelete /></div>
 									<span class="hidden md:inline font-light">delete</span>
