@@ -17,30 +17,30 @@
 	 * @param value
 	 * @returns {Promise<string>} An empty string or “value” string.
 	 */
-	function editFun(value: string): Promise<string> {
+	function editFun(value: string): Promise<string | false> {
 		return new Promise((resolve) => {
-			const editModal: ModalSettings = {
+			const modal: ModalSettings = {
 				type: 'prompt',
 				title: 'Edit',
 				body: '',
 				value: value,
 				valueAttr: { type: 'text', required: true, class: 'input variant-form-material' },
-				response: (r: string) => (r ? resolve(r) : resolve(''))
+				response: (r: string) => resolve(r)
 			};
-			modalStore.trigger(editModal);
+			modalStore.trigger(modal);
 		});
 	}
 
-	function delFun(value: string) {
+	function delFun(value: string): Promise<boolean> {
 		return new Promise((resolve) => {
-			const delModal: ModalSettings = {
+			const modal: ModalSettings = {
 				type: 'confirm',
-				title: 'Confirm deletion',
-				body: `You are about to DELETE <span class="ml-1 font-bold text-warning-500">${value}</span>.<br/>
+				title: 'Confirm Deletion',
+				body: `You are about to DELETE ${spanWrap(value, 'ml-1 font-bold text-warning-500')}.<br/>
 				Are you sure?`,
 				response: (r) => resolve(r)
 			};
-			modalStore.trigger(delModal);
+			modalStore.trigger(modal);
 		});
 	}
 
@@ -57,7 +57,7 @@
 	method="POST"
 	action="?/add"
 	use:enhance={({ formData, cancel }) => {
-		const newBrandName = formData.get('name');
+		const newBrandName = formData.get('newBrandName');
 
 		const doesExist = data.brands.some(
 			(brand) => brand.name.toLowerCase() === newBrandName.toLowerCase()
@@ -78,7 +78,7 @@
 		<input
 			type="text"
 			placeholder="Brand name"
-			name="name"
+			name="newBrandName"
 			required
 			autofocus
 			class="w-96 input variant-form-material"
@@ -107,45 +107,51 @@
 			</tr>
 		</thead> -->
 			<tbody>
-				{#each data.brands as row, i}
+				{#each data.brands as brand, i}
 					<tr>
 						<td class="w-[5.25rem] text-center">{i + 1}</td>
 
 						<td>
-							{row.name}
+							{brand.name}
 						</td>
 						<td class="flex justify-end">
 							<form
 								method="POST"
 								action="?/edit"
 								use:enhance={async ({ formData, cancel }) => {
-									const newName = await editFun(row.name);
+									const newBrandName = await editFun(brand.name);
 
-									if (newName.length === 0) {
+									if (!newBrandName) {
+										cancel();
+										return;
+									}
+
+									if (newBrandName.length === 0) {
 										toast.warning('The field should not be empty.');
 										cancel();
 										return;
 									}
 
 									const doesExist = data.brands.some(
-										(brand) => brand.name.toLowerCase() === newName.toLowerCase()
+										(brand) => brand.name.toLowerCase() === newBrandName.toLowerCase()
 									);
 
 									if (doesExist) {
-										toast.warning(`${spanWrap(newName)} already exist.`);
+										toast.warning(`${spanWrap(newBrandName)} already exist.`);
 										cancel();
 										return;
 									}
 
-									formData.set('newName', newName);
+									formData.set('newBrandName', newBrandName);
 
 									return ({ update }) => {
 										update();
 									};
 								}}
+								class="mr-4"
 							>
-								<input type="hidden" name="name" value={row.name} />
-								<button class="btn mr-4 variant-ringed-success">
+								<input type="hidden" name="brandName" value={brand.name} />
+								<button class="btn variant-ringed-success">
 									<span class="w-4"><FaRegEdit /></span>
 									<span class="hidden md:inline font-light"> edit </span>
 								</button>
@@ -155,8 +161,8 @@
 								action="?/delete"
 								use:enhance={async ({ submitter, formData, cancel }) => {
 									submitter.disabled = true;
-									const name = formData.get('name');
-									const confirmation = await delFun(name);
+									const brandName = formData.get('brandName');
+									const confirmation = await delFun(brandName);
 
 									if (!confirmation) {
 										cancel();
@@ -170,7 +176,7 @@
 									};
 								}}
 							>
-								<input type="hidden" name="name" value={row.name} />
+								<input type="hidden" name="brandName" value={brand.name} />
 								<button class="btn variant-ringed-error">
 									<div class="w-4"><MdDelete /></div>
 									<span class="hidden md:inline font-light">delete</span>

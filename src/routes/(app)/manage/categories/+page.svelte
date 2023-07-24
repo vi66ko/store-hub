@@ -132,9 +132,10 @@
 										update();
 									};
 								}}
+								class="mr-4"
 							>
 								<input type="hidden" name="categoryName" value={category.name} />
-								<button class="btn mr-4 variant-ringed-success">
+								<button class="btn variant-ringed-success">
 									<span class="w-4"><FaRegEdit /></span>
 									<span class="hidden md:inline font-light"> edit </span>
 								</button>
