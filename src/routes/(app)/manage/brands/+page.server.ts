@@ -1,5 +1,5 @@
 import { error, fail } from '@sveltejs/kit';
-import db from '$lib/server/db/connectdb';
+import db from '$lib/server/db/connectDb';
 import { spanWrap } from '$lib/gadgetBag';
 import type { PageServerLoad, Actions } from './$types';
 
