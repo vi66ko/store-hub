@@ -4,7 +4,7 @@ import { spanWrap } from '$lib/gadgetBag';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load = (async () => {
-	const categories = await db.categories.getdAll();
+	const categories = await db.categories.getAll();
 
 	return { categories };
 }) satisfies PageServerLoad;
@@ -12,20 +12,30 @@ export const load = (async () => {
 export const actions = {
 	async add({ request }) {
 		const formData = await request.formData();
-		const name = formData.get('name');
+		const categoryName = formData.get('categoryName');
 
-		const added = await db.categories.add(name).catch((error) => error);
-
-		if (added.error) {
-			return fail(409, { message: added.message });
+		const doesExist = await db.categories.find(categoryName).catch((error) => error);
+		if (doesExist) {
+			return fail(409, { success: false, message: `${spanWrap(categoryName)} already exist.` });
 		}
 
-		return { success: true, message: '' };
+		const added = await db.categories.add(categoryName).catch((error) => error);
+		if (!added) {
+			return fail(409, {
+				success: false,
+				message: `Something went wrong when adding ${spanWrap(categoryName)}.`
+			});
+		}
+
+		return {
+			success: true,
+			message: `Successfully add ${spanWrap(categoryName)}`
+		};
 	},
 	async edit({ request }) {
 		const formData = await request.formData();
-		const categoryName = formData.get('name');
-		const newCategoryName = formData.get('newName');
+		const categoryName = formData.get('categoryName');
+		const newCategoryName = formData.get('newCategoryName');
 
 		if (categoryName === newCategoryName) {
 			return fail(409, { success: false, message: 'Same name' });
@@ -47,6 +57,17 @@ export const actions = {
 		};
 	},
 	async delete({ request }) {
-		//
+		const formData = await request.formData();
+		const categoryName = formData.get('categoryName');
+
+		const deleted = await db.categories.delete(categoryName).catch((error) => error);
+
+		if (!deleted) {
+			console.log('Something went wrong when trying to delete the brand name');
+			console.log({ deleted });
+			return fail(500, { success: false, message: 'Something went wrong.' });
+		}
+
+		return { success: true, message: `Successfully deleted ${spanWrap(categoryName)}` };
 	}
 } satisfies Actions;
