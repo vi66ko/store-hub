@@ -1,4 +1,4 @@
-import { fail } from '@sveltejs/kit';
+import { error, fail } from '@sveltejs/kit';
 import db from '$lib/server/db/connectdb';
 import { spanWrap } from '$lib/gadgetBag';
 import type { PageServerLoad, Actions } from './$types';
@@ -12,12 +12,20 @@ export const load = (async () => {
 export const actions = {
 	async add({ request }) {
 		const formData = await request.formData();
-		const brandName = formData.get('name');
+		const brandName = formData.get('newBrandName');
+
+		const doesExist = await db.brands.find(brandName).catch((error) => error);
+		if (doesExist) {
+			return fail(409, { success: false, message: `${spanWrap(brandName)} already exist.` });
+		}
 
 		const added = await db.brands.add(brandName).catch((error) => error);
 
-		if (!added.isSuccessful) {
-			return fail(409, { success: false, message: `${spanWrap(brandName)} already exist.` });
+		if (!added) {
+			return fail(409, {
+				success: false,
+				message: `Something went wrong when adding ${spanWrap(brandName)}.`
+			});
 		}
 
 		return {
@@ -27,8 +35,8 @@ export const actions = {
 	},
 	async edit({ request }) {
 		const formData = await request.formData();
-		const brandName = formData.get('name');
-		const newBrandName = formData.get('newName');
+		const brandName = formData.get('brandName');
+		const newBrandName = formData.get('newBrandName');
 
 		if (brandName === newBrandName) {
 			return fail(409, { success: false, message: 'Same name' });
@@ -48,15 +56,15 @@ export const actions = {
 	},
 	async delete({ request }) {
 		const formData = await request.formData();
-		const name = formData.get('name');
+		const brandName = formData.get('brandName');
 
-		const deleting = await db.brands.delete(name);
+		const deleted = await db.brands.delete(brandName).catch((error) => error);
 
-		if (!deleting) {
+		if (!deleted) {
 			console.log('Something went wrong when trying to delete the brand name');
-			console.log({ deleting });
+			console.log({ deleted });
 			return fail(500, { success: false, message: 'Something went wrong.' });
 		}
-		return { success: true, message: `Successfully deleted ${spanWrap(name)}` };
+		return { success: true, message: `Successfully deleted ${spanWrap(brandName)}` };
 	}
 } satisfies Actions;
