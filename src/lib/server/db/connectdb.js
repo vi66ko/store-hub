@@ -20,11 +20,12 @@ const tablesSchema = `
 
         CREATE TABLE IF NOT EXISTS Products(
             rowid INTEGER PRIMARY KEY,
-            barcode TEXT ,
-            name TEXT NOT NULL CHECK (LENGTH(name) > 0),
+            name TEXT NOT NULL CHECK (LENGTH(name) > 0) UNIQUE,
             description TEXT,
-            price REAL CHECK (LENGTH(price) > 0 ),
-            category TEXT DEFAULT 'none'
+            barcode TEXT,
+            price REAL DEFAULT 0.0,
+            category TEXT DEFAULT 'Others',
+            brand TEXT DEFAULT 'none'
         );
 
 
@@ -34,7 +35,7 @@ const tablesSchema = `
             seller_id INTEGER,
             sell_price REAL NOT NULL CHECK(LENGTH(sell_price) > 0),
             sell_date INTEGER NOT NULL CHECK(LENGTH(sell_date) > 0),
-            FOREIGN KEY (product_id) REFERENCES  products(rowid),
+            FOREIGN KEY (product_id) REFERENCES  products(rowid)
             FOREIGN KEY (seller_id) REFERENCES user(email)
         );
 
@@ -63,29 +64,32 @@ const tablesSchema = `
     const db = new sqlite3.Database(dbPath, (err) => {
         if (err) console.error(err.message); // log the error if any and exit gracefully
     })
-    console.log('------------------------------------------------------------');
+    console.log('------------------ Database connection ---------------------');
     console.log(`Connection with SQLIte: ${dbPath}`)
     console.log('has been established');
-    console.log('------------------------------------------------------------');
+
 
 
     db.exec(tablesSchema,
         (error) => {
             //  runQuery(db);
             if (error) {
-                console.log(error.message)
+                console.log(`{{{{{{{{{{ Error when creating the tables }}}}}}}}}}`)
+                console.error(error.message)
             } else {
-                console.log('------------------------------------------------------------');
+                console.log()
+                console.log('=> Creating the database:');
                 console.log('If tables: Users, Products, Sells, Sessions did not exist now they DO!');
-                console.log('------------------------------------------------------------');
             }
+            console.log('------------------------------------------------------------');
+            console.log()
 
         }
     );
     db.close()
 })(db_store_hub);
 
-
+//
 
 
 /**
@@ -273,12 +277,149 @@ const log = {
 
 }
 const products = {
-    add() {
-        // 
+    __tableName: 'Products',
+    /**
+     * 
+     * @param {string} $name 
+     * @param {string} $description 
+     * @param {string} $barcode 
+     * @param {number} $price 
+     * @param {string} $category 
+     * @param {string} $brand 
+     * @returns {Promise<boolean>}
+     */
+    add($name, $description, $barcode, $price, $category, $brand) {
+        return new Promise((resolve, reject) => {
+            const db = connect();
+            const query = `INSERT INTO ${this.__tableName}(name, description, barcode,
+                 price, category, brand) VALUES($name, $description, $barcode, $price, $category, $brand)`
+
+            db.run(query, { $name, $description, $barcode, $price, $category, $brand }, function (error) {
+                if (error) {
+                    logError(error)
+                    throw error;
+                }
+
+                if (this.changes) {
+                    resolve(true)
+                } else {
+                    reject(false)
+                }
+            })
+        })
     },
-    remove(id) {
-        // 
+    get($productsName) {
+        return new Promise((resolve, reject) => {
+            const db = connect();
+            const query = ``
+        })
+    },
+    /**
+     * - This promise will never be rejected
+     * - It will return array with the data or an empty one.
+     * @returns 
+     */
+    getAll() {
+        return new Promise((resolve, reject) => {
+            const db = connect();
+            const query = `SELECT * FROM ${this.__tableName}`;
+
+            db.all(query, function (error, rows) {
+                if (error) {
+                    logError(error)
+                    throw error;
+                }
+                resolve(rows)
+            })
+        })
+    },
+    /**
+     * @param {number} $id
+     * @param {string} $name 
+     * @param {string} $description 
+     * @param {string} $barcode 
+     * @param {string} $price 
+     * @param {string} $category 
+     * @param {string} $brand
+     * @returns {Promise<boolean>}
+     */
+    update($id, $name, $description, $barcode, $price, $category, $brand) {
+        return new Promise((resolve, reject) => {
+            const db = connect();
+
+            const query = `UPDATE ${this.__tableName} SET 
+            name = $name,
+            description = $description,
+            barcode = $barcode,
+            price = $price, 
+            category = $category, 
+            brand = $brand
+            WHERE rowid = $id
+            `
+
+            db.run(query, { $id, $name, $description, $barcode, $price, $category, $brand }, function (error) {
+                if (error) {
+                    logError(error)
+                    throw error;
+                }
+
+                if (this.changes) {
+                    resolve(true)
+                } else {
+                    reject(false)
+                }
+            })
+        })
+    },
+    delete($name) {
+        return new Promise((resolve, reject) => {
+            const db = connect();
+            const query = `DELETE FROM ${this.__tableName} WHERE name = $name`
+
+            db.run(query, { $name }, function (error) {
+                if (error) {
+                    logError(error)
+                    throw error;
+                }
+
+                if (this.changes) {
+                    resolve(true)
+                } else {
+                    reject(false)
+                }
+            })
+        })
+    },
+    /**
+     * 
+     * @param {string} $name 
+     * @param {number} id 
+     * @returns {Promise<boolean>}
+     */
+    find($name, id = 0) {
+        return new Promise((resolve, reject) => {
+            const db = connect();
+            let query = `SELECT * FROM ${this.__tableName} WHERE LOWER(name) = $name`
+
+            if (id) {
+                query = `SELECT * FROM ${this.__tableName} WHERE LOWER(name) = $name AND rowid !=${id}`
+            }
+
+            db.get(query, { $name: $name.toLowerCase() }, function (error, row) {
+                if (error) {
+                    logError(error)
+                    throw error;
+                }
+
+                if (row) {
+                    resolve(true)
+                } else {
+                    reject(false)
+                }
+            })
+        })
     }
+
 }
 
 const brands = {
@@ -286,17 +427,9 @@ const brands = {
     /**
      * 
      * @param {string} $brandName 
-     * @returns 
+     * @returns {Promise<boolean>} true if all is good.
      */
-    async add($brandName) {
-        const hasBrand = await this.find($brandName).catch(error => error)
-
-        if (hasBrand) {
-            return {
-                isSuccessful: false, message: `${hasBrand} name already exist!`
-            }
-        }
-
+    add($brandName) {
         return new Promise((resolve, reject) => {
             const db = connect();
             const query = `INSERT INTO ${this.__tableName}(name) VALUES($brandName)`;
@@ -304,10 +437,13 @@ const brands = {
             db.run(query, { $brandName }, function (error) {
                 if (error) {
                     logError(error)
-                    return;
+                    throw error;
                 }
-
-                resolve({ isSuccessful: true })
+                if (this.changes) {
+                    resolve(true)
+                } else {
+                    reject(false)
+                }
             })
 
         })
@@ -317,7 +453,7 @@ const brands = {
      * @param {string} $brandName 
      * @returns {Promise<boolean>}
      */
-    async find($brandName) {
+    find($brandName) {
         return new Promise((resolve, reject) => {
             const db = connect();
             const query = `SELECT name FROM ${this.__tableName} WHERE LOWER(name) = $brandName`
@@ -325,10 +461,13 @@ const brands = {
             db.get(query, { $brandName: $brandName.toLowerCase() }, function (error, row) {
                 if (error) {
                     logError(error)
-                    return;
+                    throw error;
                 }
-
-                resolve(row)
+                if (row) {
+                    resolve(true)
+                } else {
+                    reject(false)
+                }
             })
 
         })
@@ -347,16 +486,22 @@ const brands = {
             db.run(query, { $newBrandName }, function (error) {
                 if (error) {
                     logError(error)
-                    return;
+                    throw error;
                 }
-                if (!this.changes) {
-                    reject(false)
-                } else {
+
+                if (this.changes) {
                     resolve(true)
+                } else {
+                    reject(false)
                 }
             })
         })
     },
+    /**
+     * 
+     * @param {string} $brandName 
+     * @returns {Promise<boolean>}
+     */
     delete($brandName) {
         return new Promise((resolve, reject) => {
             const db = connect();
@@ -365,26 +510,58 @@ const brands = {
             db.run(query, { $brandName }, function (error) {
                 if (error) {
                     logError(error)
-                    return;
+                    throw error;
                 }
 
-                if (!this.changes) {
-                    reject(false)
-                } else {
+                if (this.changes) {
                     resolve(true)
+                } else {
+                    reject(false)
                 }
             })
         })
     },
+    /**
+     * This promise will never be rejected
+     * It is not case sensitive
+     * @param {string} $brandName 
+     * @returns {Promise<[] | undefined>}
+     */
+    get($brandName) {
+        return new Promise((resolve) => {
+            const db = connect();
+            const query = `SELECT * FROM ${this.__tableName} WHERE LOWER(name) = $brandName`
+
+            db.get(
+                query,
+                {
+                    $brandName: $brandName.toLowerCase()
+                },
+                function (error, row) {
+                    if (error) {
+                        logError(error)
+                        throw error;
+                    }
+
+                    resolve(row)
+                })
+        })
+    },
+    /**
+     * This promise will never be rejected
+     * It will return array with the data or an empty one.
+     * @returns
+     */
     getAll() {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             const db = connect();
             const query = `SELECT * FROM ${this.__tableName}`
             db.all(query, function (error, rows) {
                 if (error) {
                     logError(error)
-                    return;
+                    throw error;
                 }
+
                 resolve(rows)
             })
 
@@ -394,18 +571,11 @@ const brands = {
 const categories = {
     __tableName: 'Categories',
     /**
-     * 
+     *
      * @param {string} $categoryName 
+     * @returns {Promise<boolean>} true if all is good.
      */
-    async add($categoryName) {
-        const hasCategory = await this.find($categoryName).catch(error => error)
-
-
-        if (hasCategory) {
-            return {
-                error: true, message: 'The category name already exist!'
-            }
-        }
+    add($categoryName) {
         return new Promise((resolve, reject) => {
             const db = connect();
             const query = `INSERT INTO ${this.__tableName}(name) VALUES($categoryName)`
@@ -413,65 +583,141 @@ const categories = {
             db.run(query, { $categoryName }, function (error) {
                 if (error) {
                     logError(error)
-                    return;
+                    throw error;
                 }
 
-                resolve({ error: false })
+                if (this.changes) {
+                    resolve(true)
+                } else {
+                    reject(false)
+                }
             })
         })
     },
-    async update($categoryName, $newCategoryName) {
+    /**
+     * 
+     * @param {string} $categoryName 
+     * @param {string} $newCategoryName 
+     * @returns {Promise<boolean>}
+     */
+    update($categoryName, $newCategoryName) {
         return new Promise((resolve, reject) => {
             const db = connect()
-            const query = `UPDATE ${this.__tableName} SET name = $newCategoryName WHERE name = '${$categoryName}'`
+            const query = `UPDATE ${this.__tableName} SET name = $newCategoryName WHERE name = $categoryName`
 
-            db.run(query, { $newCategoryName }, function (error) {
+            db.run(query, { $categoryName, $newCategoryName }, function (error) {
                 if (error) {
                     logError(error)
-                    return;
+                    throw error;
                 }
-                if (!this.changes) {
-                    reject(false)
-                } else {
+
+                if (this.changes) {
                     resolve(true)
+                } else {
+                    reject(false)
                 }
             })
         })
     },
-    async delete() {
-        return new Promise((resolve, reject) => {
-            // 
-        })
-    },
-    async find($categoryName) {
+    /**
+     * 
+     * @param {string} $categoryName 
+     * @returns {Promise<boolean>}
+     */
+    delete($categoryName) {
         return new Promise((resolve, reject) => {
             const db = connect();
-            const query = `SELECT name FROM ${this.__tableName} WHERE LOWER(name) = $categoryName`
+            const query = `DELETE FROM ${this.__tableName} WHERE name = $categoryName`
+            db.run(query, {
+                $categoryName
+            },
+                function (error) {
+                    if (error) {
+                        logError(error)
+                        throw error;
+                    }
 
-            db.get(query, { $categoryName: $categoryName.toLowerCase() }, function (error, row) {
+                    if (this.changes) {
+                        resolve(true)
+                    } else {
+                        reject(false)
+                    }
+                })
+        })
+    },
+    /**
+     * It is not case sensitive so 'John' === 'jOHn'
+     
+     * @param { 'id' | 'name'} column
+     * @param {string} value
+     * @returns {Promise<boolean>}
+     */
+    find(column, value) {
+        return new Promise((resolve, reject) => {
+            const db = connect();
+            const query = `SELECT * FROM ${this.__tableName} WHERE LOWER(${column}) = $name`
+
+            db.get(query, { $name: value.toLowerCase() }, function (error, row) {
                 if (error) {
                     logError(error)
-                    return;
+                    throw error;
                 }
 
-                resolve(row)
+                if (row) {
+                    resolve(true)
+                } else {
+                    reject(false)
+                }
             })
         })
     },
-    async getdAll() {
-        return new Promise((resolve, reject) => {
+    /**
+     * This promise will never be rejected
+     * It is not case sensitive
+     * @param {string} $categoryName 
+     * @returns {Promise<[] | undefined>}
+     */
+    get($categoryName) {
+        return new Promise((resolve) => {
+            const db = connect();
+            const query = `SELECT * FROM ${this.__tableName} WHERE LOWER(name) = $categoryName`
+
+            db.get(
+                query,
+                {
+                    $categoryName: $categoryName.toLowerCase()
+                },
+                function (error, row) {
+                    if (error) {
+                        logError(error)
+                        throw error;
+                    }
+
+                    resolve(row)
+                })
+        })
+    },
+    /**
+     * This promise will never be rejected
+     * It will return array with the data or an empty one.
+     * @returns 
+     */
+    async getAll($categoryName) {
+        return new Promise((resolve) => {
             const db = connect()
             const query = `SELECT * FROM ${this.__tableName}`
             db.all(query, function (error, rows) {
                 if (error) {
                     logError(error)
-                    return;
+                    throw error;
                 }
+
                 resolve(rows)
             })
         })
     },
 }
+
 function checkTables() {
     const db = connect()
     const allTableQuery = "SELECT name FROM sqlite_master WHERE type='table';"
