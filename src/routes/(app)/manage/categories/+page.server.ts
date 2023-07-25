@@ -10,11 +10,11 @@ export const load = (async () => {
 }) satisfies PageServerLoad;
 
 export const actions = {
-	async add({ request }) {
+	add: async ({ request }) => {
 		const formData = await request.formData();
-		const categoryName = formData.get('categoryName');
+		const categoryName = formData.get('name');
 
-		const doesExist = await db.categories.find(categoryName).catch((error) => error);
+		const doesExist = await db.categories.find('name', categoryName).catch((error) => error);
 		if (doesExist) {
 			return fail(409, { success: false, message: `${spanWrap(categoryName)} already exist.` });
 		}
@@ -32,7 +32,7 @@ export const actions = {
 			message: `Successfully add ${spanWrap(categoryName)}`
 		};
 	},
-	async edit({ request }) {
+	edit: async ({ request }) => {
 		const formData = await request.formData();
 		const categoryName = formData.get('categoryName');
 		const newCategoryName = formData.get('newCategoryName');
@@ -56,11 +56,11 @@ export const actions = {
 			message: `Successfully changed from ${spanWrap(categoryName)} to ${spanWrap(newCategoryName)}`
 		};
 	},
-	async delete({ request }) {
+	delete: async ({ request }) => {
 		const formData = await request.formData();
-		const categoryName = formData.get('categoryName');
+		const name = formData.get('name');
 
-		const deleted = await db.categories.delete(categoryName).catch((error) => error);
+		const deleted = await db.categories.delete(name).catch((error) => error);
 
 		if (!deleted) {
 			console.log('Something went wrong when trying to delete the brand name');
@@ -68,6 +68,6 @@ export const actions = {
 			return fail(500, { success: false, message: 'Something went wrong.' });
 		}
 
-		return { success: true, message: `Successfully deleted ${spanWrap(categoryName)}` };
+		return { success: true, message: `Successfully deleted ${spanWrap(name)}` };
 	}
 } satisfies Actions;
