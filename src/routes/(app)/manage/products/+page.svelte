@@ -1,18 +1,24 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
+	import { onMount } from 'svelte';
 	import { Autocomplete, popup, modalStore } from '@skeletonlabs/skeleton';
+	import { spanWrap, toast } from '$lib/gadgetBag';
+
+	import type { ActionData, PageData } from './$types';
+	import type { AutocompleteOption, PopupSettings, ModalSettings } from '@skeletonlabs/skeleton';
 
 	import MdSearch from 'svelte-icons/md/MdSearch.svelte';
 	import FaRegEdit from 'svelte-icons/fa/FaRegEdit.svelte';
-
-	import type { PageData } from './$types';
-	import type { AutocompleteOption, PopupSettings, ModalSettings } from '@skeletonlabs/skeleton';
-	import { enhance } from '$app/forms';
 	import Edith from './Edith.svelte';
 
 	export let data: PageData;
+	export let form: ActionData;
 	let inputPopup: string = '';
 	let isDeleteBtnDisabled = false;
 	let edith = false;
+	let endPoint: string;
+	let title: string;
+	let selectedProduct = '';
 	// $: console.log(data);
 
 	let popupSettings: PopupSettings = {
@@ -21,127 +27,179 @@
 		placement: 'bottom'
 	};
 
-	const flavorOptions: AutocompleteOption[] = [
-		{ label: 'Vanilla', value: 'vanilla', keywords: 'plain, basic', meta: { healthy: false } },
-		{ label: 'Chocolate', value: 'chocolate', keywords: 'dark, white', meta: { healthy: false } },
-		{ label: 'Strawberry', value: 'strawberry', keywords: 'fruit', meta: { healthy: true } },
-		{
-			label: 'Neapolitan',
-			value: 'neapolitan',
-			keywords: 'mix, strawberry, chocolate, vanilla',
-			meta: { healthy: false }
-		},
-		{ label: 'Pineapple', value: 'pineapple', keywords: 'fruit', meta: { healthy: true } },
-		{ label: 'Peach', value: 'peach', keywords: 'fruit', meta: { healthy: true } }
-	];
+	let autocompleteOption: AutocompleteOption[];
+	onMount(() => {
+		autocompleteOption = data.products.map((product) => {
+			return {
+				label: product.name
+			};
+		});
+	});
 
 	function onPopupSelect(event: any): void {
 		inputPopup = event.detail.label;
 	}
 
-	const delModal: ModalSettings = {
-		type: 'confirm',
-		title: 'Please Confirm',
-		body: 'Are you sure you want to delete it?',
-		response: (r: boolean) => r
-	};
+	function delFun(value: string): Promise<boolean> {
+		return new Promise((resolve) => {
+			const modal: ModalSettings = {
+				type: 'confirm',
+				title: 'Delete Confirmation',
+				body: `You are about to DELETE product with name ${spanWrap(
+					value,
+					'ml-1 font-bold text-warning-500'
+				)}.<br/>
+				Are you sure?`,
+				response: (r) => resolve(r)
+			};
+			modalStore.trigger(modal);
+		});
+	}
 
-	modalStore.close();
-	$: console.log('modalStore');
-	$: console.log($modalStore[0]);
+	// $: console.log(data);
+
+	$: if (!form?.success && form?.message) {
+		toast.warning(form.message);
+	}
+	$: if (form?.success) {
+		toast.success(form.message);
+	}
 </script>
 
-<form method="POST" class="py-4 relative">
-	<div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
-		<div class=" w-14 input-group-shim">
-			<MdSearch />
+{#if edith}
+	<Edith
+		on:click={() => {
+			selectedProduct = '';
+			edith = false;
+		}}
+		{title}
+		{endPoint}
+		product={data.products[selectedProduct]}
+		products={data.products}
+		brands={data.brands}
+		categories={data.categories}
+	/>
+{:else}
+	<form method="POST" class="py-4 relative">
+		<div class="input-group input-group-divider grid-cols-[auto_1fr_auto]">
+			<div class=" w-14 input-group-shim">
+				<MdSearch />
+			</div>
+			<input
+				type="search"
+				name="autocomplete-search"
+				bind:value={inputPopup}
+				placeholder="Search..."
+				use:popup={popupSettings}
+				class="input autocomplete px-4 py-2"
+			/>
+			<button class="variant-filled-secondary">Search</button>
+			<!-- <button class="variant-filled-secondary">Submit</button> -->
 		</div>
-		<input
-			type="search"
-			name="autocomplete-search"
-			bind:value={inputPopup}
-			placeholder="Search..."
-			use:popup={popupSettings}
-			class="input autocomplete px-4 py-2"
-		/>
-		<button class="variant-filled-secondary">Search</button>
-		<!-- <button class="variant-filled-secondary">Submit</button> -->
-	</div>
 
-	<div
-		data-popup="popupAutocomplete"
-		class="card w-full max-h-48 py-4 overflow-y-auto border border-primary-500 top-[-100px]"
-		tabindex="-1"
-	>
-		<Autocomplete bind:input={inputPopup} options={flavorOptions} on:selection={onPopupSelect} />
+		<div
+			data-popup="popupAutocomplete"
+			class="card w-full max-h-48 py-4 overflow-y-auto border border-primary-500 top-[-100px]"
+			tabindex="-1"
+		>
+			<Autocomplete
+				bind:input={inputPopup}
+				options={autocompleteOption}
+				on:selection={onPopupSelect}
+			/>
+		</div>
+	</form>
+	<div class="py-4 text-center">
+		<button
+			type="button"
+			on:click={() => {
+				endPoint = 'add';
+				title = 'Adding new product';
+				edith = true;
+			}}
+			class="w-96 h-[42px] btn variant-filled-secondary"
+		>
+			<span>+</span>
+			<span>add new product</span>
+		</button>
 	</div>
-</form>
-
-<!-- <button type="button" class="btn variant-ringed-success">
-	<span>(icon)</span>
-	<span>Button</span>
-</button> -->
-<div class="table-container flex justify-center">
-	{#if edith}
-		<Edith on:click={() => (edith = false)} />
-	{:else}
+	<div class="py-4 table-container flex justify-center">
 		<table class="table table-hover">
 			<thead class="tracking-wider">
 				<tr>
-					<th />
-					<th>Position</th>
+					<th class="">Id</th>
 					<th>Name</th>
-					<th>Symbol</th>
-					<th>weight</th>
+					<th>Description</th>
+					<th>Price</th>
+					<th>Barcode</th>
+					<th>Category</th>
+					<th>Brand</th>
 					<th />
 				</tr>
 			</thead>
 			<tbody>
-				{#each data.sourceData as row, i}
+				{#if data?.products.length === 0}
 					<tr>
-						<td class="w-48">
-							<button
-								type="button"
-								class="btn variant-ringed-success"
-								on:click={() => (edith = true)}
-							>
-								<span class="w-4"><FaRegEdit /></span>
-
-								<span class="hidden md:inline font-light"> edith </span>
-							</button>
-						</td>
-						<td>{row.position}</td>
-						<td>{row.name}</td>
-						<td>{row.symbol}</td>
-						<td>{row.weight}</td>
-						<td class="text-right">
-							<form
-								method="POST"
-								action="?/delete"
-								use:enhance={async () => {
-									isDeleteBtnDisabled = true;
-									console.log('beffore');
-									console.log(modalStore.trigger(delModal));
-
-									const confirmation = $modalStore[0]?.response();
-									console.log('After');
-
-									return async ({ update }) => {
-										await update();
-
-										isDeleteBtnDisabled = false;
-									};
-								}}
-							>
-								<input type="hidden" name="name" value={row.name} />
-								<button class="btn variant-ringed-error" disabled={isDeleteBtnDisabled}>
-									<span>X</span>
-									<span class="hidden md:inline font-light">delete</span>
-								</button>
-							</form>
+						<td colspan="8">
+							<p class="px-2 py-4 text-center dark:bg-surface-800">
+								There is not any products records. Feel free to add.
+							</p>
 						</td>
 					</tr>
-				{/each}
+				{:else}
+					{#each data?.products as product, i}
+						<tr>
+							<td>{product.rowid}</td>
+							<td>{product.name}</td>
+							<td>{product.description}</td>
+							<td>{product.price}</td>
+							<td>{product.barcode}</td>
+							<td>{product.category}</td>
+							<td>{product.brand}</td>
+							<td class="flex justify-end">
+								<div>
+									<button
+										type="button"
+										on:click={() => {
+											endPoint = 'edit';
+											title = 'Editing';
+											edith = true;
+											selectedProduct = i;
+										}}
+										class="btn variant-ringed-success"
+									>
+										<span class="w-4"><FaRegEdit /></span>
+										<span class="hidden md:inline font-light"> edith </span>
+									</button>
+								</div>
+								<form
+									method="POST"
+									action="?/delete"
+									use:enhance={async ({ cancel }) => {
+										isDeleteBtnDisabled = true;
+										const confirmation = await delFun(product.name);
+										if (!confirmation) {
+											isDeleteBtnDisabled = false;
+											cancel();
+										}
+
+										return async ({ update }) => {
+											await update();
+											isDeleteBtnDisabled = false;
+										};
+									}}
+									class="ml-4"
+								>
+									<input type="hidden" name="name" value={product.name} />
+									<button class="btn variant-ringed-error" disabled={isDeleteBtnDisabled}>
+										<span>X</span>
+										<span class="hidden md:inline font-light">delete</span>
+									</button>
+								</form>
+							</td>
+						</tr>
+					{/each}
+				{/if}
 			</tbody>
 			<tfoot>
 				<!-- <tr>
@@ -150,5 +208,12 @@
 			</tr> -->
 			</tfoot>
 		</table>
-	{/if}
-</div>
+	</div>
+{/if}
+
+<style>
+	th {
+		padding-left: 0.75rem !important;
+		padding-right: 0.75rem !important;
+	}
+</style>
