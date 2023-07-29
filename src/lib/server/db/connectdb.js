@@ -1,4 +1,9 @@
 import sqlite3 from 'sqlite3';
+import { access, constants } from 'node:fs';
+
+
+console.log('------------------ Access ---------------------');
+console.dir(access)
 
 import { setUpSQLightErrorData, logError } from '$lib/gadgetBag';
 
@@ -59,13 +64,14 @@ const tablesSchema = `
     `;
 
 
-(function initiateDataBase(/**@type {string} */ dbPath) {
+function initiateDataBase(/**@type {string} */ dbPath) {
     // the default SQLite db flag is sqlite.OPEN_READWRITE & sqlite.OPEN_CREATE
     const db = new sqlite3.Database(dbPath, (err) => {
         if (err) console.error(err.message); // log the error if any and exit gracefully
     })
+
     console.log('------------------ Database connection ---------------------');
-    console.log(`Connection with SQLIte: ${dbPath}`)
+    console.log(`Connection with SQLIte: ${db_store_hub}`)
     console.log('has been established');
 
 
@@ -87,7 +93,18 @@ const tablesSchema = `
         }
     );
     db.close()
-})(db_store_hub);
+}
+
+/**
+ * Checking if the file exist
+ */
+await access(db_store_hub, constants.R_OK, (error) => {
+    if (error) {
+        initiateDataBase(db_store_hub)
+    }
+
+})
+
 
 //
 
