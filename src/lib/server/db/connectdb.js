@@ -2,9 +2,6 @@ import sqlite3 from 'sqlite3';
 import { access, constants } from 'node:fs';
 
 
-console.log('------------------ Access ---------------------');
-console.dir(access)
-
 import { setUpSQLightErrorData, logError } from '$lib/gadgetBag';
 
 sqlite3.verbose()
@@ -35,7 +32,7 @@ const tablesSchema = `
 
 
         CREATE TABLE IF NOT EXISTS Sells(
-            sell_id INTEGER PRIMARY KEY NOT NULL,
+            rowid INTEGER PRIMARY KEY,
             product_id INTEGER,
             seller_id INTEGER,
             sell_price REAL NOT NULL CHECK(LENGTH(sell_price) > 0),
@@ -85,7 +82,7 @@ function initiateDataBase(/**@type {string} */ dbPath) {
             } else {
                 console.log()
                 console.log('=> Creating the database:');
-                console.log('If tables: Users, Products, Sells, Sessions did not exist now they DO!');
+                console.log('If tables: Users, Products, Sells, Sessions Brands and Categories did not exist now they DO!');
             }
             console.log('------------------------------------------------------------');
             console.log()
@@ -104,7 +101,6 @@ await access(db_store_hub, constants.R_OK, (error) => {
     }
 
 })
-
 
 //
 
@@ -155,8 +151,12 @@ const users = {
             })
         })
     },
+    /**
+     * 
+     * @param {string} id 
+     */
     getHim(id) {
-        console.log('Get him');
+        console.log('Get him', id);
 
     },
     remove($email) {
@@ -437,6 +437,21 @@ const products = {
         })
     }
 
+}
+
+const sells = {
+    __tableName: 'Sells',/**
+     * 
+     * @param {strign} $name 
+     * @param {strign} sellerId 
+     * @param {strign} $sellPrice 
+     * @param {number} $sellDate 
+     */
+    add($productId, sellerName, $sellPrice, $sellDate) {
+        console.log('================== Sell Added ====================')
+        console.log($productId, sellerName, $sellPrice, $sellDate)
+
+    }
 }
 
 const brands = {
@@ -763,11 +778,73 @@ function checkTables() {
 }
 
 
+/**
+ * 
+ * @param {number} numSells 
+ */
+async function generateSells(numSells) {
+    const users = ['John', 'Elizabeth', 'Clark'];
+    const allProducts = await products.getAll()
+    let randomProduct;
+    let randomUser;
+
+    for (let i = 0; i < numSells; i++) {
+        randomProduct = allProducts[Math.floor(Math.random() * allProducts.length)]
+        randomUser = users[Math.floor(Math.random() * users.length)]
+        sells.add(randomProduct.name, randomUser, randomProduct.price, new Date(generateRandomDate()))
+    }
+}
+
+/**
+ * @typedef {object} SetUpOptions
+ * @property {string} yearMonth - The year and month in the format 'YYYY-MM'.
+ * @property {number} workHourStart - The starting hour of work (24-hour format).
+ * @property {number} workHourEnd - The ending hour of work (24-hour format).
+ * @property {number} monthLength - The number of days in the month.
+ */
+
+/**
+ * @param {SetUpOptions} setUp  
+ * @example
+ * // Default values are:
+ *  yearMonth: '2024-07'
+ *  workTimeStart: 8
+ *  workTimeEnd: 20
+ *  monthLength: 31
+ * 
+ * @returns 
+ */
+function generateRandomDate(setUp = {
+    yearMonth: '2024-07',
+    workHourStart: 8,
+    workHourEnd: 20,
+    monthLength: 31
+}) {
+
+    let date = Math.floor(Math.random() * setUp.monthLength);
+    date = date < 10 ? '0' + date : date;
+
+    let hour = Math.floor(Math.random() * (setUp.workHourEnd - setUp.workHourStart + 1)) + setUp.workHourStart;
+    hour = hour < 10 ? '0' + hour : hour;
+
+    let minute = Math.floor(Math.random() * 60);
+    minute = minute < 10 ? '0' + minute : minute;
+
+
+    return new Date(`${setUp.yearMonth}-${date}:${hour}:${minute}`).getTime()
+}
+
+generateSells(10)
+
+
+
+
 export default {
+    log,
     users,
     sessions,
-    log,
     products,
+    sells,
     brands,
     categories
 }
@@ -775,3 +852,5 @@ export default {
 // const db = storeHubDataBase()
 
 // db.users.add('Gosho', 'gosho3@mail', '123').catch(error => console.error(error))
+
+
