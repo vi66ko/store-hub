@@ -3,6 +3,7 @@ import { access, constants } from 'node:fs';
 
 
 import { setUpSQLightErrorData, logError } from '$lib/gadgetBag';
+import { error } from '@sveltejs/kit';
 
 sqlite3.verbose()
 
@@ -440,19 +441,38 @@ const products = {
 }
 
 const sells = {
-    __tableName: 'Sells',/**
+    __tableName: 'Sells',
+    /**
      * 
-     * @param {strign} $name 
-     * @param {strign} sellerId 
+     * @param {strign} $productId 
+     * @param {strign} $sellerId 
      * @param {strign} $sellPrice 
      * @param {number} $sellDate 
      */
-    add($productId, sellerName, $sellPrice, $sellDate) {
+    add($productId, $sellerId, $sellPrice, $sellDate) {
+
         console.log('================== Sell Added ====================')
-        console.log($productId, sellerName, $sellPrice, $sellDate)
+        console.log($productId, $sellerId, $sellPrice, $sellDate)
+        return new Promise((resolve, reject) => {
+            const db = connect();
+            const query = `INSERT INTO ${this.__tableName}(product_id, seller_id, sell_price, sell_date ) VALUES($productId, $sellerId, $sellPrice, $sellDate)`
+
+            db.run(query, { $productId, $sellerId, $sellPrice, $sellDate }, function (error) {
+                if (error) {
+                    logError(error)
+                    throw error;
+                }
+                if (this.changes) {
+                    resolve(true)
+                } else {
+                    reject(false)
+                }
+            })
+        })
 
     }
 }
+
 
 const brands = {
     __tableName: 'Brands',
@@ -791,8 +811,10 @@ async function generateSells(numSells) {
     for (let i = 0; i < numSells; i++) {
         randomProduct = allProducts[Math.floor(Math.random() * allProducts.length)]
         randomUser = users[Math.floor(Math.random() * users.length)]
-        sells.add(randomProduct.name, randomUser, randomProduct.price, new Date(generateRandomDate()))
+
+        sells.add(randomProduct.rowid, randomUser, randomProduct.price, new Date(generateRandomDate())).catch(error => logError(error))
     }
+
 }
 
 /**
@@ -834,7 +856,7 @@ function generateRandomDate(setUp = {
     return new Date(`${setUp.yearMonth}-${date}:${hour}:${minute}`).getTime()
 }
 
-generateSells(10)
+generateSells(3000)
 
 
 
