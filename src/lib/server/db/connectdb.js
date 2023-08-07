@@ -35,7 +35,7 @@ const tablesSchema = `
         CREATE TABLE IF NOT EXISTS Sells(
             rowid INTEGER PRIMARY KEY,
             product_id INTEGER,
-            seller_id INTEGER,
+            seller_id TEXT,
             sell_price REAL NOT NULL CHECK(LENGTH(sell_price) > 0),
             sell_date INTEGER NOT NULL CHECK(LENGTH(sell_date) > 0),
             FOREIGN KEY (product_id) REFERENCES  products(rowid)
@@ -102,7 +102,7 @@ await access(db_store_hub, constants.R_OK, (error) => {
     }
 
 })
-
+// initiateDataBase(db_store_hub)
 //
 
 
@@ -124,7 +124,7 @@ function connect(filePath = './src/lib/server/db/store_hub.db') {
 
 
 const users = {
-    table: 'Users',
+    __table: 'Users',
     /**
      * 
      * @param {string} username 
@@ -135,7 +135,7 @@ const users = {
     add(username, email, password) {
         return new Promise((resolve, reject) => {
             let db = connect();
-            const query = `INSERT INTO ${this.table} (name, email, password) VALUES( ?, ?, ?)`
+            const query = `INSERT INTO ${this.__table} (name, email, password) VALUES( ?, ?, ?)`
 
             db.run(query, [username, email, password], function (error) {
                 if (error) {
@@ -160,10 +160,24 @@ const users = {
         console.log('Get him', id);
 
     },
+    getThemAll() {
+        return new Promise((resolve, reject) => {
+            const db = connect();
+            const query = `SELECT * FROM ${this.__table} Users;`
+
+            db.all(query, (error, rows) => {
+                if (error) {
+                    logError(error)
+                    throw error;
+                }
+                resolve(rows)
+            })
+        })
+    },
     remove($email) {
         return new Promise((resolve, reject) => {
             const db = connect();
-            const query = `DELETE FROM ${this.table} WHERE email = $email`
+            const query = `DELETE FROM ${this.__table} WHERE email = $email`
 
 
             db.run(query, { $email }, function (error) {
@@ -444,10 +458,10 @@ const sells = {
     __tableName: 'Sells',
     /**
      * 
-     * @param {strign} $productId 
-     * @param {strign} $sellerId 
-     * @param {strign} $sellPrice 
-     * @param {number} $sellDate 
+     * @param {string} $productId 
+     * @param {string} $sellerId 
+     * @param {string} $sellPrice 
+     * @param {Date} $sellDate 
      */
     add($productId, $sellerId, $sellPrice, $sellDate) {
 
@@ -470,8 +484,68 @@ const sells = {
             })
         })
 
+    },
+    /**
+     * 
+     * @param {string} year 
+     */
+    getTopYearOf(year = '2022') {
+        return new Promise((resolve, reject) => {
+            const db = connect();
+            const query =
+                `SELECT p.name, SUM(s.sell_price) AS total_revenue, COUNT(*) AS total_sales
+            FROM Sells s
+            JOIN Products p ON s.product_id = p.rowid
+            WHERE s.sell_date >= strftime('%s', 'now', '-7 days') * 1000
+            GROUP BY p.name
+            ORDER BY total_sales DESC
+            LIMIT 100;
+            `;
+
+        })
+    },
+    getTopMonthOf(month) {
+        return new Promise((resolve, reject) => {
+            const db = connect()
+            const query = `SELECT product_id, `
+        })
+    },
+    getTopWeekOf($weekNumber) {
+        return new Promise((resolve, reject) => {
+            const db = connect()
+            const query = `
+            SELECT product_id, COUNT(*) AS total_sales, SUM(sell_price) AS total_revenue
+            FROM ${this.__tableName}
+            WHERE strftime('%Y-%m', sell_done / 1000, 'unixepoch') = $weekNumber
+            GROUP BY product_id
+            ORDER BY total_sales DESC
+            LIMIT 100`
+        })
+
+    },
+    getTopOfAllTime() {
+        return new Promise((resolve) => {
+            const db = connect()
+            const query = `
+            SELECT Products.name, COUNT(*) AS total_sales, SUM(sell_price) AS total_revenue
+            FROM ${this.__tableName} sells
+            JOIN Products ON sells.product_id = Products.rowid
+            GROUP BY product_id
+            ORDER BY total_sales DESC
+            LIMIT 100`
+
+            db.all(query, function (error, rows) {
+                if (error) {
+                    logError(error)
+                    throw error;
+                }
+
+                resolve(rows)
+            })
+        })
     }
 }
+
 
 
 const brands = {
@@ -803,23 +877,27 @@ function checkTables() {
  * @param {number} numSells 
  */
 async function generateSells(numSells) {
-    const users = ['John', 'Elizabeth', 'Clark'];
+    const allUsers = await users.getThemAll();
     const allProducts = await products.getAll()
     let randomProduct;
-    let randomUser;
+    let randomUserId;
+    let list = []
 
     for (let i = 0; i < numSells; i++) {
         randomProduct = allProducts[Math.floor(Math.random() * allProducts.length)]
-        randomUser = users[Math.floor(Math.random() * users.length)]
+        randomUserId = allUsers[Math.floor(Math.random() * allUsers.length)].email
 
-        sells.add(randomProduct.rowid, randomUser, randomProduct.price, new Date(generateRandomDate())).catch(error => logError(error))
+        list.push([randomProduct.rowid, randomUserId, randomProduct.price, new Date(generateRandomDate()).getTime()])
+        // list.push([randomProduct.rowid, randomUsername, randomProduct.price, new Date(generateRandomDate()).toLocaleString()])
     }
+
+    return list;
 
 }
 
 /**
  * @typedef {object} SetUpOptions
- * @property {string} yearMonth - The year and month in the format 'YYYY-MM'.
+ * @property {string} year - The year and month in the format 'YYYY'.
  * @property {number} workHourStart - The starting hour of work (24-hour format).
  * @property {number} workHourEnd - The ending hour of work (24-hour format).
  * @property {number} monthLength - The number of days in the month.
@@ -829,7 +907,8 @@ async function generateSells(numSells) {
  * @param {SetUpOptions} setUp  
  * @example
  * // Default values are:
- *  yearMonth: '2024-07'
+ *  year: '2022'
+ *  month: 7 | 8 | 9
  *  workTimeStart: 8
  *  workTimeEnd: 20
  *  monthLength: 31
@@ -837,14 +916,18 @@ async function generateSells(numSells) {
  * @returns 
  */
 function generateRandomDate(setUp = {
-    yearMonth: '2024-07',
+    year: '2022',
     workHourStart: 8,
     workHourEnd: 20,
     monthLength: 31
 }) {
 
+    let month = Math.floor(Math.random() * (9 - 7 + 1) + 7)
+    month = month < 10 ? '0' + month : month
+
     let date = Math.floor(Math.random() * setUp.monthLength);
     date = date < 10 ? '0' + date : date;
+
 
     let hour = Math.floor(Math.random() * (setUp.workHourEnd - setUp.workHourStart + 1)) + setUp.workHourStart;
     hour = hour < 10 ? '0' + hour : hour;
@@ -853,13 +936,23 @@ function generateRandomDate(setUp = {
     minute = minute < 10 ? '0' + minute : minute;
 
 
-    return new Date(`${setUp.yearMonth}-${date}:${hour}:${minute}`).getTime()
+    return new Date(`${setUp.year}-${month}-${date}:${hour}:${minute}`).getTime()
 }
 
-generateSells(3000)
+
+// const wholeSell = await generateSells(15000)
+// console.log('$$$$$$$ Wholesel')
+
+// wholeSell.sort((a, b,) => a[3] - b[3])
 
 
+// wholeSell.forEach((row) => {
+//     sells.add(...row)
+// })
 
+// for (let i = 0; i < wholeSell.length; i++) {
+//     await sells.add(...row)
+// }
 
 export default {
     log,
@@ -869,10 +962,26 @@ export default {
     sells,
     brands,
     categories
-}
+};
 
 // const db = storeHubDataBase()
 
 // db.users.add('Gosho', 'gosho3@mail', '123').catch(error => console.error(error))
 
+
+`SELECT product_id, COUNT(*) AS total_sales, SUM(sell_price) AS total_revenue
+FROM Sells
+WHERE strftime('%Y-%m', sell_date / 1000, 'unixepoch') >= '2022-07'
+GROUP BY product_id
+ORDER BY total_sales DESC
+LIMIT 100;
+`;
+
+
+
+
+`SELECT product_id, seller_id, sell_price, strftime('%Y-%m', sell_date / 1000, 'unixepoch') AS formatted_sell_month
+FROM Sells
+WHERE strftime('%Y-%m', sell_date / 1000, 'unixepoch') = '2023-07';
+`
 
