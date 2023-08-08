@@ -1,13 +1,15 @@
 import db from '$lib/server/db/connectDb';
 import { error, fail } from '@sveltejs/kit';
-import { spanWrap } from '$lib/gadgetBag';
+import { spanWrap, setTableId } from '$lib/gadgetBag';
 
 import type { PageServerLoad, Actions } from './$types';
 
 export const load = (async () => {
-	const products = await db.products.getAll();
+	let products = await db.products.getAll();
 	const categories = await db.categories.getAll();
 	const brands = await db.brands.getAll();
+
+	products = setTableId(products);
 
 	return { products, categories, brands };
 }) satisfies PageServerLoad;
