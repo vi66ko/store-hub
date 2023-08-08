@@ -489,34 +489,43 @@ const sells = {
      * 
      * @param {string} year 
      */
-    getTopYearOf(year = '2022') {
+    getTopMonthOf(year = '2022', $month = '9') {
         return new Promise((resolve, reject) => {
             const db = connect();
-            const query =
-                `SELECT p.name, SUM(s.sell_price) AS total_revenue, COUNT(*) AS total_sales
-            FROM Sells s
-            JOIN Products p ON s.product_id = p.rowid
-            WHERE s.sell_date >= strftime('%s', 'now', '-7 days') * 1000
-            GROUP BY p.name
-            ORDER BY total_sales DESC
-            LIMIT 100;
+            const query = `
+                SELECT Products.name, COUNT(*) AS total_sales, ROUND(SUM(sell_price), 2) AS total_amount
+                FROM Sells                
+                JOIN Products ON Sells.product_id = Products.rowid                                
+                WHERE strftime('%Y-%m', sell_date / 1000, 'unixepoch') = '2022-07'
+                GROUP BY product_id
+                ORDER BY total_sales DESC
+                LIMIT 100;
             `;
 
         })
     },
-    getTopMonthOf(month) {
+    getTopRange($startDate, $endDate) {
         return new Promise((resolve, reject) => {
             const db = connect()
-            const query = `SELECT product_id, `
+            const query = `
+                SELECT Products.name, COUNT(*) AS total_sales, ROUND(SUM(sell_price), 2) AS total_amount
+                FROM Sells                
+                JOIN Products ON Sells.product_id = Products.rowid
+                WHERE strftime('%Y-%m', sell_date / 1000, 'unixepoch') >= '2022-07'
+                    AND strftime('%Y-%m', sell_date / 1000, 'unixepoch') < '2022-08'
+                GROUP BY product_id
+                ORDER BY total_sales DESC
+                LIMIT 100;
+            `
         })
     },
     getTopWeekOf($weekNumber) {
         return new Promise((resolve, reject) => {
             const db = connect()
             const query = `
-            SELECT product_id, COUNT(*) AS total_sales, ROUND(SUM(sell_price), 2) AS total_revenue
+            SELECT product_id, COUNT(*) AS total_sales, ROUND(SUM(sell_price), 2) AS total_amount
             FROM ${this.__tableName}
-            WHERE strftime('%Y-%m', sell_done / 1000, 'unixepoch') = $weekNumber
+            WHERE strftime('%Y-%m', sell_date / 1000, 'unixepoch') = $weekNumber
             GROUP BY product_id
             ORDER BY total_sales DESC
             LIMIT 100`
@@ -527,9 +536,9 @@ const sells = {
         return new Promise((resolve) => {
             const db = connect()
             const query = `
-            SELECT Products.name, COUNT(*) AS total_sales, ROUND(SUM(sell_price), 2) AS total_revenue
-            FROM ${this.__tableName} sells
-            JOIN Products ON sells.product_id = Products.rowid
+            SELECT Products.name, COUNT(*) AS total_sales, ROUND(SUM(sell_price), 2) AS total_amount
+            FROM ${this.__tableName}
+            JOIN Products ON Sells.product_id = Products.rowid
             GROUP BY product_id
             ORDER BY total_sales DESC
             LIMIT 100`
