@@ -18,7 +18,7 @@
 	let edith = false;
 	let endPoint: string;
 	let title: string;
-	let selectedProduct = '';
+	let selectedProduct: string | number = '';
 	// $: console.log(data);
 
 	let popupSettings: PopupSettings = {
@@ -56,6 +56,64 @@
 		});
 	}
 
+	function sortByLetters() {
+		/**
+		 * - True = ascendingly;
+		 * - False = descendingly
+		 * @type {boolean}
+		 */
+		let direction: boolean = true;
+		return function (event: MouseEvent) {
+			const sortBy = (event.target as HTMLButtonElement).dataset.value;
+			console.log(data.products);
+
+			data.products = data.products.sort((a, b) => {
+				// What exactly is going on here
+				// Why does not work properly
+				// Is the ternary operator?
+				let valueA = direction ? a[sortBy].toUpperCase() : b[sortBy].toUpperCase();
+				let valueB = direction ? b[sortBy].toUpperCase() : a[sortBy].toUpperCase();
+				// let valueA = b[sortBy].toUpperCase();
+				// let valueB = a[sortBy].toUpperCase();
+
+				if (valueA < valueB) {
+					return -1;
+				}
+				if (valueA > valueB) {
+					return 1;
+				}
+
+				return 0;
+			});
+			direction = !direction;
+
+			console.dir(sortBy);
+		};
+	}
+
+	function sortByNumbers() {
+		/**
+		 * 	- True = ascendingly;
+		 *  - False = descendingly.
+		 * @type {boolean}
+		 */
+		let direction: boolean = true;
+
+		return function (event: MouseEvent) {
+			const sortBy = (event.target as HTMLButtonElement).dataset.value;
+			console.log(sortBy);
+
+			data.products = data.products.sort((a, b) => {
+				if (direction) {
+					return a[sortBy] - b[sortBy];
+				}
+
+				return b[sortBy] - a[sortBy];
+			});
+
+			direction = !direction;
+		};
+	}
 	// $: console.log(data);
 
 	$: if (!form?.success && form?.message) {
@@ -127,13 +185,27 @@
 		<table class="table table-hover">
 			<thead class="tracking-wider">
 				<tr>
-					<th class="">Id</th>
-					<th>Name</th>
-					<th>Description</th>
-					<th>Price</th>
-					<th>Barcode</th>
-					<th>Category</th>
-					<th>Brand</th>
+					<th class="text-center">
+						<button data-value="tableId" on:click={sortByNumbers()}> Id </button>
+					</th>
+					<th>
+						<button data-value="name" on:click={sortByLetters()}> Name </button>
+					</th>
+					<th>
+						<button data-value="description" on:click={sortByLetters()}> Description </button>
+					</th>
+					<th>
+						<button data-value="price" on:click={sortByNumbers()}>Price</button>
+					</th>
+					<th>
+						<button data-value="barcode" on:click={sortByNumbers()}>Barcode</button>
+					</th>
+					<th>
+						<button data-value="category" on:click={sortByLetters()}>Category</button>
+					</th>
+					<th>
+						<button data-value="brand" on:click={sortByLetters()}>Brand</button>
+					</th>
 					<th />
 				</tr>
 			</thead>
@@ -149,10 +221,10 @@
 				{:else}
 					{#each data?.products as product, i}
 						<tr>
-							<td>{product.rowid}</td>
+							<td class="text-center">{product.tableId}</td>
 							<td>{product.name}</td>
 							<td>{product.description}</td>
-							<td>{product.price}</td>
+							<td>{product.price.toFixed(2)}</td>
 							<td>{product.barcode}</td>
 							<td>{product.category}</td>
 							<td>{product.brand}</td>
@@ -212,8 +284,4 @@
 {/if}
 
 <style>
-	th {
-		padding-left: 0.75rem !important;
-		padding-right: 0.75rem !important;
-	}
 </style>
