@@ -8,9 +8,8 @@
 	// states
 	let tabSet: number = 1;
 	let isFocused: boolean = true;
-	$: {
-		console.log(form);
-	}
+
+	$: console.log(form);
 </script>
 
 <div class="h-screen grid place-items-center">
@@ -28,8 +27,15 @@
 				class="h-80 flex flex-col justify-between"
 			>
 				<div class="mt-6">
-					<input type="email" name="email" placeholder="Email" class="input" />
 					<input
+						value="demo@mail.com"
+						type="email"
+						name="email"
+						placeholder="Email"
+						class="input"
+					/>
+					<input
+						value="test"
 						type="password"
 						name="password"
 						id="password"
@@ -53,13 +59,19 @@
 			>
 				<div class="mt-6">
 					<input
-						value="test"
+						value="demo"
 						type="text"
 						name="username"
 						placeholder="Username"
 						class="input mt-4"
 					/>
-					<input value="tes@t" type="email" name="email" placeholder="Email" class="input mt-4" />
+					<input
+						value="demo@mail.com"
+						type="email"
+						name="email"
+						placeholder="Email"
+						class="input mt-4"
+					/>
 					<input value="test" type="text" name="password" placeholder="Password" class="input" />
 					<input
 						value="test"
