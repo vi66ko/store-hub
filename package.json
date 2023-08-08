@@ -35,7 +35,9 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"chart.js": "^4.3.2",
 		"sqlite3": "^5.1.6",
+		"svelte-chartjs": "^3.1.2",
 		"svelte-icons": "^2.1.0"
 	}
 }
