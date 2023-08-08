@@ -514,7 +514,7 @@ const sells = {
         return new Promise((resolve, reject) => {
             const db = connect()
             const query = `
-            SELECT product_id, COUNT(*) AS total_sales, SUM(sell_price) AS total_revenue
+            SELECT product_id, COUNT(*) AS total_sales, ROUND(SUM(sell_price), 2) AS total_revenue
             FROM ${this.__tableName}
             WHERE strftime('%Y-%m', sell_done / 1000, 'unixepoch') = $weekNumber
             GROUP BY product_id
@@ -527,7 +527,7 @@ const sells = {
         return new Promise((resolve) => {
             const db = connect()
             const query = `
-            SELECT Products.name, COUNT(*) AS total_sales, SUM(sell_price) AS total_revenue
+            SELECT Products.name, COUNT(*) AS total_sales, ROUND(SUM(sell_price), 2) AS total_revenue
             FROM ${this.__tableName} sells
             JOIN Products ON sells.product_id = Products.rowid
             GROUP BY product_id
