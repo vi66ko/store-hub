@@ -57,14 +57,12 @@
 	method="POST"
 	action="?/add"
 	use:enhance={({ formData, cancel }) => {
-		const newBrandName = formData.get('newBrandName');
+		const name = formData.get('name');
 
-		const doesExist = data.brands.some(
-			(brand) => brand.name.toLowerCase() === newBrandName.toLowerCase()
-		);
+		const doesExist = data.brands.some((brand) => brand.name.toLowerCase() === name.toLowerCase());
 
 		if (doesExist) {
-			toast.warning(`${spanWrap(newBrandName)} already exist.`);
+			toast.warning(`${spanWrap(name)} already exist.`);
 			cancel();
 			return;
 		}
@@ -78,7 +76,7 @@
 		<input
 			type="text"
 			placeholder="Brand name"
-			name="newBrandName"
+			name="name"
 			required
 			autofocus
 			class="w-96 input variant-form-material"
