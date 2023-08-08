@@ -10,9 +10,10 @@ export const load = (async () => {
 }) satisfies PageServerLoad;
 
 export const actions = {
-	async add({ request }) {
+	add: async ({ request }) => {
 		const formData = await request.formData();
-		const brandName = formData.get('newBrandName');
+		const brandName = formData.get('name');
+		console.log({ brandName });
 
 		const doesExist = await db.brands.find(brandName).catch((error) => error);
 		if (doesExist) {
@@ -33,7 +34,7 @@ export const actions = {
 			message: `Successfully add ${spanWrap(brandName)}`
 		};
 	},
-	async edit({ request }) {
+	edit: async ({ request }) => {
 		const formData = await request.formData();
 		const brandName = formData.get('brandName');
 		const newBrandName = formData.get('newBrandName');
@@ -54,7 +55,7 @@ export const actions = {
 			message: `Successfully changed from ${spanWrap(brandName)} to ${spanWrap(newBrandName)}`
 		};
 	},
-	async delete({ request }) {
+	delete: async ({ request }) => {
 		const formData = await request.formData();
 		const brandName = formData.get('brandName');
 
