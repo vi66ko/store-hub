@@ -14,3 +14,10 @@
 </script>
 
 <slot />
+
+<style>
+	:global(th) {
+		padding-left: 0.75rem !important;
+		padding-right: 0.75rem !important;
+	}
+</style>
