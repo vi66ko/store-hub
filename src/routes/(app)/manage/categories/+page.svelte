@@ -26,7 +26,7 @@
 				title: 'Edit',
 				body: '',
 				value: value,
-				valueAttr: { type: 'text', required: true, class: 'input variant-from-material' },
+				valueAttr: { type: 'text', required: true, class: 'input variant-form-material' },
 				response: (r) => resolve(r)
 			};
 			modalStore.trigger(modal);
@@ -63,7 +63,7 @@
 		<input
 			type="text"
 			placeholder="Category name"
-			name="categoryName"
+			name="name"
 			required
 			autofocus
 			class="w-96 input variant-form-material"
@@ -145,7 +145,7 @@
 								action="?/delete"
 								use:enhance={async ({ submitter, formData, cancel }) => {
 									submitter.disabled = true;
-									const categoryName = formData.get('categoryName');
+									const categoryName = formData.get('name');
 									const confirmation = await delFun(categoryName);
 
 									if (!confirmation) {
@@ -160,7 +160,7 @@
 									};
 								}}
 							>
-								<input type="hidden" name="categoryName" value={category.name} />
+								<input type="hidden" name="name" value={category.name} />
 								<button class="btn variant-ringed-error">
 									<div class="w-4"><MdDelete /></div>
 									<span class="hidden md:inline font-light">delete</span>
